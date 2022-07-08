@@ -6,14 +6,14 @@
 #include<cstring>
 #include<cmath>
 #include<ctime>
-#include<Windows.h>//°üº¬¸ß¾«¶È¼ÆÊ±µÄ¿â
+#include<Windows.h>//åŒ…å«é«˜ç²¾åº¦è®¡æ—¶çš„åº“
 using namespace std;
 using namespace cv;
-Mat R1, R2, P1, P2, Q;//R1ºÍR2·Ö±ğÎªĞ£Õı±ä»»¾ØÕó£¬P1ºÍP2ÎªĞÂµÄÍ¶Ó°¾ØÕó£¨¼´Ğ£ÕıºóµÄ£©¡£
-Mat map1L, map2L;//×óÏà»ú·ÂÉä±ä»»¾ØÕó
-Mat map1R, map2R;//ÓÒÏà»ú·ÂÉä±ä»»¾ØÕó
+Mat R1, R2, P1, P2, Q;//R1å’ŒR2åˆ†åˆ«ä¸ºæ ¡æ­£å˜æ¢çŸ©é˜µï¼ŒP1å’ŒP2ä¸ºæ–°çš„æŠ•å½±çŸ©é˜µï¼ˆå³æ ¡æ­£åçš„ï¼‰ã€‚
+Mat map1L, map2L;//å·¦ç›¸æœºä»¿å°„å˜æ¢çŸ©é˜µ
+Mat map1R, map2R;//å³ç›¸æœºä»¿å°„å˜æ¢çŸ©é˜µ
 
-/*×óÓÒÏà»úµ¥Ä¿±ê¶¨ºóµÄ²ÎÊı*/
+/*å·¦å³ç›¸æœºå•ç›®æ ‡å®šåçš„å‚æ•°*/
 Mat cameraMatL = (Mat_<double>(3, 3) << 733.8717636998138, 0, 310.2623615442249,
 	0, 732.9430546834244, 244.035542862459,
 0, 0, 1);
@@ -22,17 +22,17 @@ Mat cameraMatR = (Mat_<double>(3, 3) << 722.3469510932143, 0, 309.7534364355943,
 0, 0, 1);
 Mat distCoeffsL = (Mat_<double>(1, 5) << 0.05592363960911046, 1.482078314973658, 0.00250936244370585, 0.00506077757879516, -11.35413769231045);
 Mat distCoeffsR = (Mat_<double>(1, 5) << 0.2866259141282117, -1.915437535711202, 0.006506222135938714, 0.001768655778660644, 2.576672625749777);
-/*Ë«Ä¿±ê¶¨R¡¢T*/
+/*åŒç›®æ ‡å®šRã€T*/
 Mat R = (Mat_<double>(3, 3) << 0.9999395960917631, -0.001257500432343772, 0.01091892213106632,
 	0.001338678267355275, 0.9999714975591566, -0.007430478436429543,
 	-0.01090926708528788, 0.007444646530251721, 0.9999127787610784);
 Mat T = (Mat_<double>(3, 1) << -25.64851828934408,
 	-0.9424207144780784,
 	-3.697534412881244);
-Mat xyz;//ÖØÍ¶Ó°¾ØÕóµÃµ½µÄÊÀ½ç×ø±ê¡£
-const Size imgSize(640, 480);//Í¼Ïñ´óĞ¡
-const Size cornersSize(8, 5);//±ê¶¨°åÉÏ½Çµã¾ØÕó
-/*SGBM¼ÆËãÊÓ²îÍ¼²¢·µ»Ø*/
+Mat xyz;//é‡æŠ•å½±çŸ©é˜µå¾—åˆ°çš„ä¸–ç•Œåæ ‡ã€‚
+const Size imgSize(640, 480);//å›¾åƒå¤§å°
+const Size cornersSize(8, 5);//æ ‡å®šæ¿ä¸Šè§’ç‚¹çŸ©é˜µ
+/*SGBMè®¡ç®—è§†å·®å›¾å¹¶è¿”å›*/
 Point3f lastP(0, 0, 0);
 int mouse = 0;
 void onMouse(int event, int x, int y, int, void*)
@@ -40,30 +40,30 @@ void onMouse(int event, int x, int y, int, void*)
 	Point origin;
 	switch (event)
 	{
-	case cv::EVENT_LBUTTONDOWN:   //Êó±ê×ó°´Å¥°´ÏÂµÄÊÂ¼ş
+	case cv::EVENT_LBUTTONDOWN:   //é¼ æ ‡å·¦æŒ‰é’®æŒ‰ä¸‹çš„äº‹ä»¶
 		origin = Point(x, y);
 		++mouse;
 		Vec3f rP = xyz.at<Vec3f>(origin);
 		cout << origin << "in world coordinate is: " << rP << endl;
 		if (mouse == 1)break;
-		cout << "¸ÃµãÓëÉÏÒ»×ø±êµãµÄ¾àÀëÎª" << sqrt((lastP.x - rP[0]) * (lastP.x - rP[0]) +
+		cout << "è¯¥ç‚¹ä¸ä¸Šä¸€åæ ‡ç‚¹çš„è·ç¦»ä¸º" << sqrt((lastP.x - rP[0]) * (lastP.x - rP[0]) +
 			(lastP.y - rP[1]) * (lastP.y - rP[1]) + (lastP.z - rP[2]) * (lastP.z - rP[2])) / 1000 << "m" << endl;
 		lastP = Point3f(rP[0], rP[1], rP[2]);
 		break;
 	}
 }
-/*½øĞĞÊÓ²îÍ¼µÄ¿Õ¶´Ìî³ä*/
-int f[1281][721][2] = { 0 };//0´æµÄÊÇÓĞÊÓ²îÖµµÄµã£¬1Ôò´æ¾ØÕóÇ°×ººÍ¡£
-int filter(int x1, int y1, int x2, int y2) {//¾ùÖµÂË²¨¡£¾ØĞÎµÄ¶Ô¶¥µã
+/*è¿›è¡Œè§†å·®å›¾çš„ç©ºæ´å¡«å……*/
+int f[1281][721][2] = { 0 };//0å­˜çš„æ˜¯æœ‰è§†å·®å€¼çš„ç‚¹ï¼Œ1åˆ™å­˜çŸ©é˜µå‰ç¼€å’Œã€‚
+int filter(int x1, int y1, int x2, int y2) {//å‡å€¼æ»¤æ³¢ã€‚çŸ©å½¢çš„å¯¹é¡¶ç‚¹
 	x1++; y1++; x2++; y2++;
 	int num = (f[x2][y2][0] - f[x2][y1 - 1][0] - f[x1 - 1][y2][0] + f[x1 - 1][y1 - 1][0]);
 	return !num?0:(f[x2][y2][1] - f[x2][y1 - 1][1] - f[x1 - 1][y2][1] + f[x1 - 1][y1 - 1][1]) / num;
 }
-int filter(int x, int y, int a) {//aÎª±ß³¤£¬±£Ö¤ÎªÆæÊı¡£²ÎÊıÎªmatÖĞÏÂ±ê´Ó0¿ªÊ¼µÄĞĞÁĞÊı¡£
+int filter(int x, int y, int a) {//aä¸ºè¾¹é•¿ï¼Œä¿è¯ä¸ºå¥‡æ•°ã€‚å‚æ•°ä¸ºmatä¸­ä¸‹æ ‡ä»0å¼€å§‹çš„è¡Œåˆ—æ•°ã€‚
 	return filter(max(x - a / 2, 0), max(y - a / 2, 0), min(x + a / 2, imgSize.height - 1), min(y + a / 2, imgSize.width - 1));
 }
 void fillEmpty(Mat &disp) {
-	struct node {//Á´±í¼ÇÂ¼ÈÔ¿ÉÒÔ½øĞĞÂË²¨µÄÈıÔª×é¡£
+	struct node {//é“¾è¡¨è®°å½•ä»å¯ä»¥è¿›è¡Œæ»¤æ³¢çš„ä¸‰å…ƒç»„ã€‚
 		int x, y;
 		node* next;
 	}; node *front=new node,*now=front,*tmp;
@@ -81,13 +81,13 @@ void fillEmpty(Mat &disp) {
 			}
 		}
 	}
-	int a = 11;//aÎª³õÊ¼´°¿Ú¡£
+	int a = 11;//aä¸ºåˆå§‹çª—å£ã€‚
 	while (a != 1) {
 		now = front;
 		while (now->next != NULL) {
 			tmp = now; now = now->next;
 			int fil = filter(now->x, now->y, a);
-			if (!fil) {//¿ÉÒÔÉ¾³ı¸ÃµãÁË¡£ÒòÎªÂË²¨²»ÁËÁË¡£
+			if (!fil) {//å¯ä»¥åˆ é™¤è¯¥ç‚¹äº†ã€‚å› ä¸ºæ»¤æ³¢ä¸äº†äº†ã€‚
 				tmp->next = now->next;
 				delete(now);
 				now = tmp;
@@ -104,56 +104,56 @@ clock_t clos;
 LARGE_INTEGER st, et, freq;
 void SGBM(Mat RectL, Mat RectR, Mat Q)
 {
-	//¶ÔSGBMÓ°Ïì½Ï´óµÄ²ÎÊıÎªNumDisparity¡¢BlockSize¡¢UniquenessRatio¡£ÆäËü°´Ä¬ÈÏÉèÖÃ¼´¿É¡£
+	//å¯¹SGBMå½±å“è¾ƒå¤§çš„å‚æ•°ä¸ºNumDisparityã€BlockSizeã€UniquenessRatioã€‚å…¶å®ƒæŒ‰é»˜è®¤è®¾ç½®å³å¯ã€‚
 	cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create(0, 16, 3);
-	int sgbmWinSize = 9;//SAD´°¿Ú´óĞ¡£¬¸ù¾İÊµ¼ÊÇé¿ö×Ô¼ºÉè¶¨¡£
+	int sgbmWinSize = 9;//SADçª—å£å¤§å°ï¼Œæ ¹æ®å®é™…æƒ…å†µè‡ªå·±è®¾å®šã€‚
 	int UniquenessRatio = 5;
-	int numDisparities = (imgSize.width/8+15)&(-16);//ÊÓ²î´°¿Ú£¬¼´Æ¥ÅäÊ±×î´óÊÓ²îÓë×îĞ¡ÊÓ²îÖµÖ®²îÇÒ´°¿Ú´óĞ¡±ØĞëÊÇ16µÄÕûÊı±¶
+	int numDisparities = (imgSize.width/8+15)&(-16);//è§†å·®çª—å£ï¼Œå³åŒ¹é…æ—¶æœ€å¤§è§†å·®ä¸æœ€å°è§†å·®å€¼ä¹‹å·®ä¸”çª—å£å¤§å°å¿…é¡»æ˜¯16çš„æ•´æ•°å€
 	int cn = RectL.channels();
 
-	sgbm->setPreFilterCap(11);//preFilterCapÎªÒ»¸ö³£Êı²ÎÊı£¬openCvÄ¬ÈÏÈ¡15¡£Ô¤´¦ÀíÊµ¼ÊÉÏÊÇµÃµ½Í¼ÏñµÄÌİ¶ÈĞÅÏ¢¡£¾­Ô¤´¦ÀíµÄÍ¼Ïñ±£´æÆğÀ´£¬½«»áÓÃÓÚ¼ÆËã´ú¼Û¡£ 
+	sgbm->setPreFilterCap(11);//preFilterCapä¸ºä¸€ä¸ªå¸¸æ•°å‚æ•°ï¼ŒopenCvé»˜è®¤å–15ã€‚é¢„å¤„ç†å®é™…ä¸Šæ˜¯å¾—åˆ°å›¾åƒçš„æ¢¯åº¦ä¿¡æ¯ã€‚ç»é¢„å¤„ç†çš„å›¾åƒä¿å­˜èµ·æ¥ï¼Œå°†ä¼šç”¨äºè®¡ç®—ä»£ä»·ã€‚ 
 	sgbm->setBlockSize(sgbmWinSize);
-	sgbm->setP1(8 * cn * sgbmWinSize * sgbmWinSize);//P1ºÍP2ÊÇ¶¯Ì¬¹æ»®ÖĞºÜÖØÒªµÄ²ÎÊı£¬¼´´ú¼Û¾ÛºÏ¹ı³ÌÖĞ¡£ÂÔ
+	sgbm->setP1(8 * cn * sgbmWinSize * sgbmWinSize);//P1å’ŒP2æ˜¯åŠ¨æ€è§„åˆ’ä¸­å¾ˆé‡è¦çš„å‚æ•°ï¼Œå³ä»£ä»·èšåˆè¿‡ç¨‹ä¸­ã€‚ç•¥
 	sgbm->setP2(32 * cn * sgbmWinSize * sgbmWinSize);
-	sgbm->setMinDisparity(0);//×îĞ¡ÊÓ²îÉèÖÃÎª0
+	sgbm->setMinDisparity(0);//æœ€å°è§†å·®è®¾ç½®ä¸º0
 	sgbm->setNumDisparities(numDisparities);
-	sgbm->setUniquenessRatio(UniquenessRatio);//×îµÍÆ¥Åä´ú¼Û´ïµ½´ÎµÍÆ¥Åä´ú¼ÛµÄ(1-UniquenessRatio/100)%Ê±£¬¸ÃµãÊÓ²î²Å±»È·¶¨ÎªÊÇÕıÈ·µÄ£¬¼´Î¨Ò»ĞÔ¼ì²â¡£
+	sgbm->setUniquenessRatio(UniquenessRatio);//æœ€ä½åŒ¹é…ä»£ä»·è¾¾åˆ°æ¬¡ä½åŒ¹é…ä»£ä»·çš„(1-UniquenessRatio/100)%æ—¶ï¼Œè¯¥ç‚¹è§†å·®æ‰è¢«ç¡®å®šä¸ºæ˜¯æ­£ç¡®çš„ï¼Œå³å”¯ä¸€æ€§æ£€æµ‹ã€‚
 	sgbm->setSpeckleWindowSize(50);
 	sgbm->setSpeckleRange(32);
-	sgbm->setDisp12MaxDiff(1);//×óÓÒÒ»ÖÂĞÔ¼ì²âµÄÎó²îãĞÖµ
+	sgbm->setDisp12MaxDiff(1);//å·¦å³ä¸€è‡´æ€§æ£€æµ‹çš„è¯¯å·®é˜ˆå€¼
 	sgbm->setMode(StereoSGBM::MODE_SGBM);
 	Mat disp, disp8U;
-	/*ÏÈÒÔ×óÍ¼Îª±ê×¼ÔÙÒÔÓÒÍ¼Îª±ê×¼¼ÆËãÊÓ²îÍ¼*/
+	/*å…ˆä»¥å·¦å›¾ä¸ºæ ‡å‡†å†ä»¥å³å›¾ä¸ºæ ‡å‡†è®¡ç®—è§†å·®å›¾*/
 	sgbm->compute(RectL, RectR, disp);
 	disp.convertTo(disp8U, CV_8U, 255 / (numDisparities * 16.0));
 	reprojectImageTo3D(disp, xyz, Q, true);
-	xyz = xyz * 16; //ÓÉÓÚËãdispµÄÊ±ºòÊÓ²î¶à³ËÁË16£¬ÇÒZ=bf/d(BÊÇ½Çµã¼äµÄ¾àÀë)£¬¼´ZÓ¦¸Ã³ËÒÔ16³Ë»ØÀ´¡£
+	xyz = xyz * 16; //ç”±äºç®—dispçš„æ—¶å€™è§†å·®å¤šä¹˜äº†16ï¼Œä¸”Z=bf/d(Bæ˜¯è§’ç‚¹é—´çš„è·ç¦»)ï¼Œå³Zåº”è¯¥ä¹˜ä»¥16ä¹˜å›æ¥ã€‚
 	//fillEmpty(disp8U);
 	imshow("left_dispShow", disp8U);
 	cnt++;
 	if (cnt % 30==0) {
 		QueryPerformanceCounter(&et);
-		cout << cnt << "´Î»¨ÁË£º" << (et.QuadPart - st.QuadPart) / freq.QuadPart << "s £¨queryº¯Êı£©ºÍ"<<(clock()-clos)/(double)CLOCKS_PER_SEC	<<"s (clockº¯Êı)"<<endl;
+		cout << cnt << "æ¬¡èŠ±äº†ï¼š" << (et.QuadPart - st.QuadPart) / freq.QuadPart << "s ï¼ˆqueryå‡½æ•°ï¼‰å’Œ"<<(clock()-clos)/(double)CLOCKS_PER_SEC	<<"s (clockå‡½æ•°)"<<endl;
 	}
-	setMouseCallback("left_dispShow", onMouse, 0);//¶Ô´°¿ÚdispShowÉèÖÃ»Øµ÷º¯Êı
+	setMouseCallback("left_dispShow", onMouse, 0);//å¯¹çª—å£dispShowè®¾ç½®å›è°ƒå‡½æ•°
 	int x=waitKey(1);
 	if (x == 32) { system("pause"); }
 
-	/*´ËÎªÒÔÓÒÍ¼Îª±ê×¼£¬ÒªĞŞ¸Ä²ÎÊı
-	sgbm->setNumDisparities(numDisparities);//Õâ¸öÊÇÕıµÄ,Ã¶¾ÙÊÓ²îÊ±·¶Î§Îª£ºminDis-minDis+numDis
+	/*æ­¤ä¸ºä»¥å³å›¾ä¸ºæ ‡å‡†ï¼Œè¦ä¿®æ”¹å‚æ•°
+	sgbm->setNumDisparities(numDisparities);//è¿™ä¸ªæ˜¯æ­£çš„,æšä¸¾è§†å·®æ—¶èŒƒå›´ä¸ºï¼šminDis-minDis+numDis
 	sgbm->setMinDisparity(-numDisparities);
 	sgbm->compute(RectR, RectL, disp);
 	disp=abs(disp);
 	disp.convertTo(disp8, CV_8U, 255 / (numDisparities * 16.0));
 	reprojectImageTo3D(disp, xyz, Q, true);
-	xyz = xyz * 16; //ÓÉÓÚËãdispµÄÊ±ºòÊÓ²î¶à³ËÁË16£¬ÇÒZ=bf/d(BÊÇ½Çµã¼äµÄ¾àÀë)£¬¼´ZÓ¦¸Ã³ËÒÔ16³Ë»ØÀ´¡£
+	xyz = xyz * 16; //ç”±äºç®—dispçš„æ—¶å€™è§†å·®å¤šä¹˜äº†16ï¼Œä¸”Z=bf/d(Bæ˜¯è§’ç‚¹é—´çš„è·ç¦»)ï¼Œå³Zåº”è¯¥ä¹˜ä»¥16ä¹˜å›æ¥ã€‚
 	imshow("right_dispShow", disp8);
-	setMouseCallback("right_dispShow", onMouse, 0);//¶Ô´°¿ÚdispShowÉèÖÃ»Øµ÷º¯Êı
+	setMouseCallback("right_dispShow", onMouse, 0);//å¯¹çª—å£dispShowè®¾ç½®å›è°ƒå‡½æ•°
 	waitKey(0);*/
 }
-/*º¯Êı×÷ÓÃ£ºÊÓ²îÍ¼×ªÉî¶ÈÍ¼ÊäÈë£º¡¡¡¡dispMap ----ÊÓ²îÍ¼£¬8Î»µ¥Í¨µÀ£¬CV_8UC1¡¡
-¡¡K       ----ÄÚ²Î¾ØÕó£¬floatÀàĞÍÊä³ö£º
-¡¡¡¡depthMap ----Éî¶ÈÍ¼£¬16Î»ÎŞ·ûºÅµ¥Í¨µÀ£¬CV_16UC1
+/*å‡½æ•°ä½œç”¨ï¼šè§†å·®å›¾è½¬æ·±åº¦å›¾è¾“å…¥ï¼šã€€ã€€dispMap ----è§†å·®å›¾ï¼Œ8ä½å•é€šé“ï¼ŒCV_8UC1ã€€
+ã€€K       ----å†…å‚çŸ©é˜µï¼Œfloatç±»å‹è¾“å‡ºï¼š
+ã€€ã€€depthMap ----æ·±åº¦å›¾ï¼Œ16ä½æ— ç¬¦å·å•é€šé“ï¼ŒCV_16UC1
 void disp2Depth(cv::Mat dispMap, cv::Mat& depthMap, cv::Mat K)
 {
 	int type = dispMap.type();
@@ -161,7 +161,7 @@ void disp2Depth(cv::Mat dispMap, cv::Mat& depthMap, cv::Mat K)
 	float fy = K.at(1, 1);
 	float cx = K.at(0, 2);
 	float cy = K.at(1, 2);
-	float baseline = 65; //»ùÏß¾àÀë65mm  
+	float baseline = 65; //åŸºçº¿è·ç¦»65mm  
 	if (type == CV_8U)
 	{
 		const float PI = 3.14159265358;
@@ -175,7 +175,7 @@ void disp2Depth(cv::Mat dispMap, cv::Mat& depthMap, cv::Mat K)
 			{
 				int id = i * width + j;
 				if (!dispData[id])
-					continue;  //·ÀÖ¹0³ı           
+					continue;  //é˜²æ­¢0é™¤           
 				depthData[id] = ushort((float)fx * baseline / ((float)dispData[id]));
 			}
 		}
@@ -188,23 +188,23 @@ void disp2Depth(cv::Mat dispMap, cv::Mat& depthMap, cv::Mat K)
 }*/
 void BM(Mat RectL, Mat RectR, Mat Q)
 {
-	cv::Ptr<cv::StereoBM>bm = cv::StereoBM::create(0, 21);//²ÎÊıºÍSGBMÀàËÆ
+	cv::Ptr<cv::StereoBM>bm = cv::StereoBM::create(0, 21);//å‚æ•°å’ŒSGBMç±»ä¼¼
 	int numDisparities = ((imgSize.width / 8) + 15) & -16;
 	int uniquenessRatio = 10;
 	int SADSize = 15;
 
-	Rect ROI1, ROI2;//ÈôÔÚBM´¦¶¨Òå£¬½«ÓÃÀ´³ıÈ¥ºÚ±ß£¨ÎŞ·¨Æ¥ÅäµÄÎ»ÖÃ£©  ÈôĞèÒªÖØÍ¶Ó°Ôò²»ÄÜÆôÓÃ£¬ÈôÆôÓÃÄÇÃ´×ø±ê½«²»¶ÔÓ¦£¬ÖØÍ¶Ó°µÄÊÇ´íÎóÖµ¡£
+	Rect ROI1, ROI2;//è‹¥åœ¨BMå¤„å®šä¹‰ï¼Œå°†ç”¨æ¥é™¤å»é»‘è¾¹ï¼ˆæ— æ³•åŒ¹é…çš„ä½ç½®ï¼‰  è‹¥éœ€è¦é‡æŠ•å½±åˆ™ä¸èƒ½å¯ç”¨ï¼Œè‹¥å¯ç”¨é‚£ä¹ˆåæ ‡å°†ä¸å¯¹åº”ï¼Œé‡æŠ•å½±çš„æ˜¯é”™è¯¯å€¼ã€‚
 	bm->setBlockSize(SADSize);
-	bm->setDisp12MaxDiff(1);//ÕÚµ²µã£¨Î¨Ò»ĞÔ¼ì²â£©¼ì²âãĞÖµ
+	bm->setDisp12MaxDiff(1);//é®æŒ¡ç‚¹ï¼ˆå”¯ä¸€æ€§æ£€æµ‹ï¼‰æ£€æµ‹é˜ˆå€¼
 	bm->setMinDisparity(0);
 	bm->setNumDisparities(numDisparities);
-	bm->setPreFilterCap(63);//Ô¤´¦ÀíÂË²¨Æ÷µÄ½Ø¶ÏãĞÖµ
-	bm->setPreFilterSize(11);//Ô¤´¦ÀíÂË²¨Æ÷µÄ´°¿Ú´óĞ¡
-	bm->setPreFilterType(CV_STEREO_BM_XSOBEL);//Ô¤´¦ÀíÀàĞÍ±êÊ¶£¬ÓĞË®Æ½µÄsobelËã×ÓËã·¨ CV_STEREO_BM_XSOBEL ºÍ CV_STEREO_BM_NORMALIZED_RESPONSE£¨¹éÒ»»¯ÏìÓ¦£©
+	bm->setPreFilterCap(63);//é¢„å¤„ç†æ»¤æ³¢å™¨çš„æˆªæ–­é˜ˆå€¼
+	bm->setPreFilterSize(11);//é¢„å¤„ç†æ»¤æ³¢å™¨çš„çª—å£å¤§å°
+	bm->setPreFilterType(CV_STEREO_BM_XSOBEL);//é¢„å¤„ç†ç±»å‹æ ‡è¯†ï¼Œæœ‰æ°´å¹³çš„sobelç®—å­ç®—æ³• CV_STEREO_BM_XSOBEL å’Œ CV_STEREO_BM_NORMALIZED_RESPONSEï¼ˆå½’ä¸€åŒ–å“åº”ï¼‰
 	//bm->setROI1(ROI1); bm->setROI2(ROI2);
-	bm->setSpeckleRange(32);//ÔÊĞíÊÓ²î±ä»¯ãĞÖµ
-	bm->setSpeckleWindowSize(50);//Á¬Í¨µãÊıÄ¿ãĞÖµ
-	bm->setTextureThreshold(10);//µÍÎÆÀíÇøÓòµÄÅĞ¶ÏãĞÖµ,µ±¸ÃSAD´°¿ÚÄÚÏñËØµãxµÄµ¼ÊıºÍĞ¡ÓÚ¸ÃãĞÖµ£¬¿É½«ÊÓ²îÉèÖÃÎª0
+	bm->setSpeckleRange(32);//å…è®¸è§†å·®å˜åŒ–é˜ˆå€¼
+	bm->setSpeckleWindowSize(50);//è¿é€šç‚¹æ•°ç›®é˜ˆå€¼
+	bm->setTextureThreshold(10);//ä½çº¹ç†åŒºåŸŸçš„åˆ¤æ–­é˜ˆå€¼,å½“è¯¥SADçª—å£å†…åƒç´ ç‚¹xçš„å¯¼æ•°å’Œå°äºè¯¥é˜ˆå€¼ï¼Œå¯å°†è§†å·®è®¾ç½®ä¸º0
 	bm->setUniquenessRatio(uniquenessRatio);
 	Mat disp16S;
 	bm->compute(RectL, RectR, disp16S);
@@ -217,9 +217,9 @@ void BM(Mat RectL, Mat RectR, Mat Q)
 	setMouseCallback("dispShow", onMouse, 0);
 	waitKey(0);
 }
-void fileMatch()//¶ÁÈ¡ÎÄ¼ş½øĞĞÆ¥Åä
+void fileMatch()//è¯»å–æ–‡ä»¶è¿›è¡ŒåŒ¹é…
 {
-	string filenameL, filenameR;//¶ÁÈëµÄÎÄ¼şÃû×óÓÒÏà»ú
+	string filenameL, filenameR;//è¯»å…¥çš„æ–‡ä»¶åå·¦å³ç›¸æœº
 	ifstream inL("L.txt"), inR("R.txt");
 	namedWindow("linePhoto", WINDOW_NORMAL);
 	while (getline(inL, filenameL) && getline(inR, filenameR))
@@ -238,22 +238,22 @@ void fileMatch()//¶ÁÈ¡ÎÄ¼ş½øĞĞÆ¥Åä
 		SGBM(rL, rR, Q);
 	}
 }
-void cameraMatch()//ÊµÊ±ÅÄÕÕ½øĞĞÆ¥Åä
+void cameraMatch()//å®æ—¶æ‹ç…§è¿›è¡ŒåŒ¹é…
 {
-	Mat L, R, rL, rR;//ÅÄÕÕµÃµ½µÄ×óÓÒÍ¼Ïñ
-	/*ÏÂÎªµ¥Éè±¸ºÅ*/
-	cout << "ÕıÔÚÁ¬½ÓÉãÏñÍ·£¬ÇëÉÔµÈ" << endl;
+	Mat L, R, rL, rR;//æ‹ç…§å¾—åˆ°çš„å·¦å³å›¾åƒ
+	/*ä¸‹ä¸ºå•è®¾å¤‡å·*/
+	cout << "æ­£åœ¨è¿æ¥æ‘„åƒå¤´ï¼Œè¯·ç¨ç­‰" << endl;
 	VideoCapture cap(1);
 	cap.set(CV_CAP_PROP_FRAME_WIDTH, imgSize.width * 2);
 	cap.set(CV_CAP_PROP_FRAME_HEIGHT, imgSize.height);
-	cout << "Á¬½Ó³É¹¦" << endl;
+	cout << "è¿æ¥æˆåŠŸ" << endl;
 	namedWindow("showCamera", WINDOW_NORMAL);
 	QueryPerformanceFrequency(&freq);
 	QueryPerformanceCounter(&st);
 	clos = clock();
 	while (1)
 	{
-		//cout << "°´¿Õ¸ñ¼ü½øĞĞÅÄÕÕ,esc¼üÍË³ö" << endl;
+		//cout << "æŒ‰ç©ºæ ¼é”®è¿›è¡Œæ‹ç…§,escé”®é€€å‡º" << endl;
 		Mat frame;
 		//while (1)
 		//{
@@ -285,13 +285,13 @@ void cameraMatch()//ÊµÊ±ÅÄÕÕ½øĞĞÆ¥Åä
 }
 void cameraMatch2()
 {
-	/*Ë«Éè±¸ºÅ*/
-	cout << "ÕıÔÚÁ¬½ÓÉãÏñÍ·£¬ÇëÉÔµÈ" << endl;
+	/*åŒè®¾å¤‡å·*/
+	cout << "æ­£åœ¨è¿æ¥æ‘„åƒå¤´ï¼Œè¯·ç¨ç­‰" << endl;
 	VideoCapture c1(1), c2(2);
-	cout << "Á¬½Ó³É¹¦" << endl;
+	cout << "è¿æ¥æˆåŠŸ" << endl;
 	while (1)
 	{
-		cout << "°´¿Õ¸ñ¼ü½øĞĞÅÄÕÕ,esc¼üÍË³ö" << endl;
+		cout << "æŒ‰ç©ºæ ¼é”®è¿›è¡Œæ‹ç…§,escé”®é€€å‡º" << endl;
 		Mat L, R, Link, gL, gR, rL, rR;
 		/*while (1)
 		{
@@ -321,12 +321,12 @@ void cameraMatch2()
 }
 int main()
 {
-	stereoRectify(cameraMatL, distCoeffsL, cameraMatR, distCoeffsR, imgSize, R, T, R1, R2, P1, P2, Q, 0);//Ğ£Õı
+	stereoRectify(cameraMatL, distCoeffsL, cameraMatR, distCoeffsR, imgSize, R, T, R1, R2, P1, P2, Q, 0);//æ ¡æ­£
 	cout << Q;
-	initUndistortRectifyMap(cameraMatL, distCoeffsL, R1, P1, imgSize, CV_32FC1, map1L, map2L);//¼ÆËãÓ³Éä¹ØÏµ
+	initUndistortRectifyMap(cameraMatL, distCoeffsL, R1, P1, imgSize, CV_32FC1, map1L, map2L);//è®¡ç®—æ˜ å°„å…³ç³»
 	initUndistortRectifyMap(cameraMatR, distCoeffsR, R2, P2, imgSize, CV_32FC1, map1R, map2R);
 	//fileMatch();
-	//cameraMatch();//µ¥
-	cameraMatch2();//Ë«
+	//cameraMatch();//å•
+	cameraMatch2();//åŒ
 	return 0;
 }
